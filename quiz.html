@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>夜2 後期練習問題クイズ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    padding: 20px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  }
+  .header h1 { font-size: 1.3em; margin-bottom: 10px; }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 0.9em;
+    flex-wrap: wrap;
+  }
+  .stats span { opacity: 0.9; }
+  .stats .score { color: #4ecca3; font-weight: bold; }
+  .progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.2);
+    margin-top: 10px;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #4ecca3;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .controls button {
+    padding: 6px 16px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: all 0.2s;
+  }
+  .controls button:hover { background: rgba(255,255,255,0.2); }
+  .controls button.active {
+    background: #4ecca3;
+    border-color: #4ecca3;
+    color: #1a1a2e;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .question-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s;
+  }
+  .question-card.answered-correct {
+    border-left: 4px solid #4ecca3;
+  }
+  .question-card.answered-wrong {
+    border-left: 4px solid #e74c3c;
+  }
+  .question-num {
+    display: inline-block;
+    background: #1a1a2e;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 32px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .question-header {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .question-text {
+    font-size: 1em;
+    line-height: 1.6;
+    padding-top: 4px;
+  }
+  .multi-badge {
+    display: inline-block;
+    background: #e8f4fd;
+    color: #0f3460;
+    font-size: 0.75em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+    font-weight: bold;
+  }
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .choice {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 16px;
+    border: 2px solid #e8e8e8;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1.5;
+  }
+  .choice:hover:not(.disabled) {
+    border-color: #0f3460;
+    background: #f8f9ff;
+  }
+  .choice.selected {
+    border-color: #0f3460;
+    background: #eef1ff;
+  }
+  .choice.correct {
+    border-color: #4ecca3;
+    background: #e8fff5;
+  }
+  .choice.wrong {
+    border-color: #e74c3c;
+    background: #fff0ee;
+  }
+  .choice.disabled {
+    cursor: default;
+  }
+  .choice-marker {
+    font-weight: bold;
+    margin-right: 10px;
+    flex-shrink: 0;
+    width: 24px;
+  }
+  .choice-text {
+    flex: 1;
+  }
+  .choice-icon {
+    margin-left: auto;
+    padding-left: 8px;
+    font-size: 1.2em;
+    flex-shrink: 0;
+  }
+  .result-msg {
+    margin-top: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    display: none;
+  }
+  .result-msg.show { display: block; }
+  .result-msg.correct-msg {
+    background: #e8fff5;
+    color: #0a7c50;
+  }
+  .result-msg.wrong-msg {
+    background: #fff0ee;
+    color: #c0392b;
+  }
+  .confirm-btn {
+    margin-top: 12px;
+    padding: 10px 24px;
+    background: #0f3460;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background 0.2s;
+    display: none;
+  }
+  .confirm-btn.show { display: inline-block; }
+  .confirm-btn:hover { background: #1a1a2e; }
+  .final-result {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    display: none;
+  }
+  .final-result.show { display: block; }
+  .final-score {
+    font-size: 3em;
+    font-weight: bold;
+    color: #0f3460;
+    margin: 20px 0;
+  }
+  .final-score .total { color: #999; font-size: 0.5em; }
+  .grade {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+  }
+  .retry-btn {
+    margin-top: 20px;
+    padding: 12px 32px;
+    background: #4ecca3;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  .retry-btn:hover { background: #3dbb92; }
+  .hidden { display: none !important; }
+  @media (max-width: 600px) {
+    .container { padding: 12px; }
+    .question-card { padding: 16px; }
+    .header h1 { font-size: 1.1em; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>夜2 後期練習問題クイズ (71問)</h1>
+  <div class="stats">
+    <span>回答済: <span class="score" id="answered">0</span> / 71</span>
+    <span>正解: <span class="score" id="correct">0</span></span>
+    <span>不正解: <span class="score" id="wrong" style="color:#e74c3c">0</span></span>
+    <span>正答率: <span class="score" id="rate">0%</span></span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <div class="controls">
+    <button id="btn-all" class="active" onclick="filterQuestions('all')">全問表示</button>
+    <button id="btn-unanswered" onclick="filterQuestions('unanswered')">未回答のみ</button>
+    <button id="btn-wrong" onclick="filterQuestions('wrong')">不正解のみ</button>
+    <button id="btn-shuffle" onclick="shuffleAndReset()">シャッフルリセット</button>
+    <button id="btn-order" onclick="resetToOriginalOrder()">順番に戻す</button>
+  </div>
+</div>
+
+<div class="container" id="quiz-container"></div>
+
+<script>
+const QUIZ_DATA = [
+  {
+    "num": 1,
+    "question": "⾷⽤とされるフグに関する記述について、正しいものを⼀つ次の中から選びなさい。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "種類によって毒⼒に差はない。"
+      },
+      {
+        "num": 2,
+        "text": "種類によって⾷⽤可能な部位が異なる。"
+      },
+      {
+        "num": 3,
+        "text": "同⼀種であれば毒⼒は同じである。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 2,
+    "question": "ふぐ処理者等の資格を与えるのはどれか。⼀つ選べ",
+    "choices": [
+      {
+        "num": 1,
+        "text": "内閣総理⼤⾂"
+      },
+      {
+        "num": 2,
+        "text": "厚⽣労働⼤⾂"
+      },
+      {
+        "num": 3,
+        "text": "都道府県知事"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 3,
+    "question": "ふぐ毒を産⽣する⽣物はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "フグ"
+      },
+      {
+        "num": 2,
+        "text": "海洋細菌"
+      },
+      {
+        "num": 3,
+        "text": "プランクトン"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 4,
+    "question": "イシナギによる中毒の原因成分が多く蓄積している臓器はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "卵巣"
+      },
+      {
+        "num": 2,
+        "text": "脂肪"
+      },
+      {
+        "num": 3,
+        "text": "肝臓"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 5,
+    "question": "シガテラ中毒の原因となる⿂はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "バラフエダイ"
+      },
+      {
+        "num": 2,
+        "text": "サケ"
+      },
+      {
+        "num": 3,
+        "text": "マグロ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 6,
+    "question": "⾙毒に関する記述である。正しいのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "有毒成分は⾙の中腸腺に蓄積される。"
+      },
+      {
+        "num": 2,
+        "text": "⾷後、数⽇経ってから発症する場合が多い。"
+      },
+      {
+        "num": 3,
+        "text": "我が国では重要⾙類の毒性値を測定しているが、規制値を超えても出荷できる。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 7,
+    "question": "⿇痺性⾙毒の有毒成分を産⽣する⽣物はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⼆枚⾙"
+      },
+      {
+        "num": 2,
+        "text": "渦鞭⽑藻"
+      },
+      {
+        "num": 3,
+        "text": "海洋細菌"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 8,
+    "question": "下痢性⾙毒が蓄積する⾙の臓器はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾙柱"
+      },
+      {
+        "num": 2,
+        "text": "⽣殖巣"
+      },
+      {
+        "num": 3,
+        "text": "中腸腺"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 9,
+    "question": "スイセンと間違えやすい⾷⽤植物はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ニラ"
+      },
+      {
+        "num": 2,
+        "text": "ギョウジャニンニク"
+      },
+      {
+        "num": 3,
+        "text": "ニリンソウ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 10,
+    "question": "トリカブトと間違えやすい⾷⽤植物はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ニリンソウ"
+      },
+      {
+        "num": 2,
+        "text": "ニラ"
+      },
+      {
+        "num": 3,
+        "text": "ギョウジャニンニク"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 11,
+    "question": "イヌサフランと間違えやすい⾷⽤植物はどれか全て選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ニリンソウ"
+      },
+      {
+        "num": 2,
+        "text": "ギボウシ"
+      },
+      {
+        "num": 3,
+        "text": "セリ"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": true
+  },
+  {
+    "num": 12,
+    "question": "⾝近な⾷品の植物性⾃然毒に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ジャガイモは発芽部分や緑⾊部分に有毒成分であるアコニチンを多く含む。"
+      },
+      {
+        "num": 2,
+        "text": "⻘ウメの有毒成分は⻘酸配糖体のアミグダリンである。"
+      },
+      {
+        "num": 3,
+        "text": "ギンナンによる中毒は 5 歳未満の⼩児が多く、ビタミン B6 の⽋乏作⽤による中枢神経⿇痺症状を起こす。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 13,
+    "question": "有毒キノコの誤⾷が起きやすい組み合わせである。正しいのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ムキタケ、シイタケ ツキヨタケ"
+      },
+      {
+        "num": 2,
+        "text": "シメジ カキシメジ"
+      },
+      {
+        "num": 3,
+        "text": "チャナメツムタケ、ヒラタケ クサウラベニタケ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 14,
+    "question": "有毒キノコとその主な症状の組み合わせである。正しいのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "シロタマゴテングタケ − 肝臓、腎臓の細胞を壊し、致命的。"
+      },
+      {
+        "num": 2,
+        "text": "ニセクロハツ − アルコールとともに⾷べると頭痛、嘔吐、めまい。"
+      },
+      {
+        "num": 3,
+        "text": "ツキヨタケ − 幻覚、興奮、寒気など"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 15,
+    "question": "有毒きのこに関する記述について、正しいものを⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "有毒きのこの判別は⾮常に難しく、⾃⽣キノコを不⽤意に採⾷することは⼤変危険である。"
+      },
+      {
+        "num": 2,
+        "text": "適切な⽅法で加熱調理や冷凍処理をすることにより、キノコの毒素を分解することができる。"
+      },
+      {
+        "num": 3,
+        "text": "ツキヨタケは、⾷⽤シメジ類やウラベニホテイシメジと似ているため誤⾷が多い。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 16,
+    "question": "次の四⼤公害病のうち飲料⽔や⾷事が原因ではないものはどれか。全て選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⽔俣病"
+      },
+      {
+        "num": 2,
+        "text": "四⽇市ぜんそく"
+      },
+      {
+        "num": 3,
+        "text": "イタイイタイ病"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": true
+  },
+  {
+    "num": 17,
+    "question": "化学性⾷中毒事件と有害物質の組み合わせである。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "森永ヒ素ミルク事件 ヒ素"
+      },
+      {
+        "num": 2,
+        "text": "カネミ油症事件 PCB"
+      },
+      {
+        "num": 3,
+        "text": "イタイイタイ病 ⽔銀"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 18,
+    "question": "森永ヒ素ミルク事件についての記述である。正しいのはどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "原因は乳化安定剤として使⽤した第⼆リン酸ソーダにヒ素が含まれていたことである。"
+      },
+      {
+        "num": 2,
+        "text": "症状は⽪膚症状のみで死者はいなかった。"
+      },
+      {
+        "num": 3,
+        "text": "⺟乳栄養児に多発した。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 19,
+    "question": "カネミ油症についての記述である。誤りはどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "原因は⾷⽤油脂製造の脱臭⼯程で熱媒体として使⽤していた硫酸が製品に混⼊したためである。"
+      },
+      {
+        "num": 2,
+        "text": "現在も症状が続いている⽅々がいる。"
+      },
+      {
+        "num": 3,
+        "text": "症状は顔⾯浮腫、ニキビのような吹き出物、全⾝の倦怠感などである。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 20,
+    "question": "⾷品製造過程における化学性⾷中毒の予防についての記述である。誤りはどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "衛⽣教育の徹底が必要。"
+      },
+      {
+        "num": 2,
+        "text": "ほんとんどは衛⽣管理を⼗分にすることにより防⽌できる。"
+      },
+      {
+        "num": 3,
+        "text": "衛⽣監視員をはっきりと定める。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 21,
+    "question": "ヒスタミンによる⾷中毒に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ヒスチジンを多く含む⾚⾝の⿂およびその加⼯品が原因⾷品となる。"
+      },
+      {
+        "num": 2,
+        "text": "ヒスタミンが菌の分解作⽤によって脱炭酸され、ヒスチジンが多量に⽣成される。"
+      },
+      {
+        "num": 3,
+        "text": "通常 1 時間以内に顔⾯が紅潮し、頭痛、蕁⿇疹などの症状を呈す。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 22,
+    "question": "ヒスタミンは⿂⾁中の何が脱炭酸され⽣成するか？",
+    "choices": [
+      {
+        "num": 1,
+        "text": "チロシン"
+      },
+      {
+        "num": 2,
+        "text": "ヒスチジン"
+      },
+      {
+        "num": 3,
+        "text": "セリン"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 23,
+    "question": "ヒスタミンによる⾷中毒をおこしやすい⿂はどれか、全て選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "マグロ"
+      },
+      {
+        "num": 2,
+        "text": "タイ"
+      },
+      {
+        "num": 3,
+        "text": "キス"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": true
+  },
+  {
+    "num": 24,
+    "question": "ヒスタミンによる⾷中毒の予防⽅法である。誤りはどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "モルガン菌などをつけない。"
+      },
+      {
+        "num": 2,
+        "text": "温度管理で菌を増殖させない。"
+      },
+      {
+        "num": 3,
+        "text": "⽣成されたヒスタミンを加熱調理により分解する。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 25,
+    "question": "寄⽣⾍に関する記述である。正しいのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⽣体の体内に寄⽣し、その⽣体から栄養をとって⽣活している動物を寄⽣⾍という。"
+      },
+      {
+        "num": 2,
+        "text": "中間宿主は寄⽣⾍が成熟して有性⽣殖を⾏うことができる宿主である。"
+      },
+      {
+        "num": 3,
+        "text": "終宿主では寄⽣⾍は成⾍にならない。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 26,
+    "question": "有性⽣殖を⾏うことができる宿主はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "待機宿主"
+      },
+      {
+        "num": 2,
+        "text": "中間宿主"
+      },
+      {
+        "num": 3,
+        "text": "終宿主"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 27,
+    "question": "終宿主に感染する前の宿主はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "中間宿主"
+      },
+      {
+        "num": 2,
+        "text": "終宿主"
+      },
+      {
+        "num": 3,
+        "text": "寄⽣体"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 28,
+    "question": "令和６年⾷中毒統計の事件数で最も多かった病因物質はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "カンピロバクター"
+      },
+      {
+        "num": 2,
+        "text": "ノロウイルス"
+      },
+      {
+        "num": 3,
+        "text": "アニサキス"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 29,
+    "question": "アニサキスの終宿主はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "サバ"
+      },
+      {
+        "num": 2,
+        "text": "ヒト"
+      },
+      {
+        "num": 3,
+        "text": "クジラ、イルカ"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 30,
+    "question": "ヒトのアニサキス症の主な原因⾷品はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "サバ"
+      },
+      {
+        "num": 2,
+        "text": "キス"
+      },
+      {
+        "num": 3,
+        "text": "アユ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 31,
+    "question": "旋尾線⾍症の主な原因⾷品はどれか、全て選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ホタルイカ"
+      },
+      {
+        "num": 2,
+        "text": "マグロ"
+      },
+      {
+        "num": 3,
+        "text": "イワシ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": true
+  },
+  {
+    "num": 32,
+    "question": "クドアによる⾷中毒の主な原因⾷品はどれか、⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾺⾁"
+      },
+      {
+        "num": 2,
+        "text": "ヒラメの刺⾝"
+      },
+      {
+        "num": 3,
+        "text": "タイの刺⾝"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 33,
+    "question": "淡⽔産⿂類から感染する寄⽣⾍に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⽇本海裂頭条⾍は⽇本に広く分布し、第⼆中間宿主であるサケなどを終宿主であるヒトが摂⾷することにより感染する。"
+      },
+      {
+        "num": 2,
+        "text": "横川吸⾍は第⼆中間宿主であるモクズガニなどをヒトが摂取することにより感染する。"
+      },
+      {
+        "num": 3,
+        "text": "有棘顎⼝⾍のヒトへの感染は中間宿主であるライギョやコイなどの摂⾷による。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 34,
+    "question": "顎⼝⾍のヒトへの感染源となるのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "サバ"
+      },
+      {
+        "num": 2,
+        "text": "イカ"
+      },
+      {
+        "num": 3,
+        "text": "ライギョ"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 35,
+    "question": "横川吸⾍のヒトへの感染源となるのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "アユ"
+      },
+      {
+        "num": 2,
+        "text": "モクズガニ"
+      },
+      {
+        "num": 3,
+        "text": "ヒラメ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 36,
+    "question": "⽇本海裂頭条⾍のヒトへの感染源となるのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "マス"
+      },
+      {
+        "num": 2,
+        "text": "タイ"
+      },
+      {
+        "num": 3,
+        "text": "ヒラメ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 37,
+    "question": "ウェステルマン肺吸⾍のヒトへの感染源とならないのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "イノシシ"
+      },
+      {
+        "num": 2,
+        "text": "サワガニ"
+      },
+      {
+        "num": 3,
+        "text": "ズワイガニ"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 38,
+    "question": "⾷⾁から感染する寄⽣⾍に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "旋⽑⾍（トリヒナ）はクマ⾁や⽣ハム、ソーセージなどの摂取により感染し、横紋筋内に寄⽣する。"
+      },
+      {
+        "num": 2,
+        "text": "有鉤条⾍は主に⽜⾁の⽣⾷などにより感染し、⼩腸上部に寄⽣するが、⾍卵摂取の場合⼼筋や脳に寄⽣する場合がる。"
+      },
+      {
+        "num": 3,
+        "text": "サルコシスティス・フェアリーはウマを中間宿主、イヌを終宿主とする。多数寄⽣した⾺⾁を⽣で⾷べると中毒症状が起きる。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 39,
+    "question": "有鉤条⾍のヒトへの感染源となるのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "鶏"
+      },
+      {
+        "num": 2,
+        "text": "ブタ"
+      },
+      {
+        "num": 3,
+        "text": "ウシ"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 40,
+    "question": "サルコシスティスのヒトへの感染源となるのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ウマ"
+      },
+      {
+        "num": 2,
+        "text": "ブタ"
+      },
+      {
+        "num": 3,
+        "text": "ヒラメ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 41,
+    "question": "野菜類、飲料⽔から感染する寄⽣⾍に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "回⾍は野菜などに付着した成⾍を経⼝的に摂取することにより感染する。"
+      },
+      {
+        "num": 2,
+        "text": "クリプトスポリジウムのオーシストは塩素消毒に強いため⽔道⽔では死滅せず、⽔道⽔による感染事例が発⽣している。"
+      },
+      {
+        "num": 3,
+        "text": "エキノコックスのヒトへの感染源は⾍卵に汚染された飲料⽔や野いちご、⼭菜などである。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 42,
+    "question": "回⾍の主な原因⾷品はどれか",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⽜⾁"
+      },
+      {
+        "num": 2,
+        "text": "野菜"
+      },
+      {
+        "num": 3,
+        "text": "カレー"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 43,
+    "question": "⽇本で集団発⽣したクリプトスポリジウム症の主な原因⾷品はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⽜⾁"
+      },
+      {
+        "num": 2,
+        "text": "⿂介類"
+      },
+      {
+        "num": 3,
+        "text": "⽔道⽔"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 44,
+    "question": "クリプトスポリジウムの予防⽅法で有効でないものはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "加熱調理"
+      },
+      {
+        "num": 2,
+        "text": "⽔道⽔の塩素消毒"
+      },
+      {
+        "num": 3,
+        "text": "⽔道⽔の紫外線照射"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 45,
+    "question": "寄⽣⾍の予防⽅法に関する記述である。正しいのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⿂介類や⾁類は⼗分に加熱をすることにより予防できる。冷凍では予防できない。"
+      },
+      {
+        "num": 2,
+        "text": "⿂の内臓の寄⽣⾍は筋⾁に移⾏することは稀である。"
+      },
+      {
+        "num": 3,
+        "text": "⿂介類を調理するときは⼆次汚染防⽌のため、⾶び散らないよう注意し器具等はよく洗浄する。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 46,
+    "question": "経⼝感染症に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "感染症の３つの発⽣要因は感染源、感染経路、感受性である。"
+      },
+      {
+        "num": 2,
+        "text": "3 類感染症にはコレラ、ペスト、腸チフス、パラチフス、腸管出⾎性⼤腸菌が含まれる。"
+      },
+      {
+        "num": 3,
+        "text": "近年では経⼝感染症と⾷中毒との区別は明確でなくなり、⾷中毒も感染症の⼀部であると考えられるようになった。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 47,
+    "question": "次のうち３類感染症はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ペスト"
+      },
+      {
+        "num": 2,
+        "text": "コレラ"
+      },
+      {
+        "num": 3,
+        "text": "インフルエンザ"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 48,
+    "question": "感染した場合、就業制限の対応が取られる疾病はどれか。全て選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "A 型肝炎"
+      },
+      {
+        "num": 2,
+        "text": "細菌性⾚痢"
+      },
+      {
+        "num": 3,
+        "text": "ボツリヌス症"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": true
+  },
+  {
+    "num": 49,
+    "question": "⾷物アレルギーに関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷物アレルギーのアレルゲンは、たんぱく質であり、それ以外の成分（脂質、糖質など）では基本的にアレルギーは起きない。"
+      },
+      {
+        "num": 2,
+        "text": "⾷物アレルギーには即時型⾷物アレルギーと遅延型⾷物アレルギーがある。"
+      },
+      {
+        "num": 3,
+        "text": "全年齢で最も多い原因⾷品は⼩⻨で、⽜乳、鶏卵の順となっている。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 50,
+    "question": "次のうち乳児のアレルゲンで最も多いのはどれか",
+    "choices": [
+      {
+        "num": 1,
+        "text": "そば"
+      },
+      {
+        "num": 2,
+        "text": "⼤⾖"
+      },
+      {
+        "num": 3,
+        "text": "鶏卵"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 51,
+    "question": "アレルギー物質表⽰における特定原材料の品⽬である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⼩⻨"
+      },
+      {
+        "num": 2,
+        "text": "いか"
+      },
+      {
+        "num": 3,
+        "text": "くるみ"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 52,
+    "question": "アレルギー表⽰の注意点である。正しいのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⼀括表⽰が原則である。"
+      },
+      {
+        "num": 2,
+        "text": "アルコールは表⽰が推奨されている。"
+      },
+      {
+        "num": 3,
+        "text": "乳たんぱくは乳の拡⼤表記として表記できる。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 53,
+    "question": "BSE、⿃インフルエンザに関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "我が国では 2009 年度以降、３頭の BSE 感染⽜が確認されている。"
+      },
+      {
+        "num": 2,
+        "text": "⽜⾁のトレーサビリティシステムが導⼊された。"
+      },
+      {
+        "num": 3,
+        "text": "⿃インフルエンザは鶏⾁や卵を⾷べることによりヒトに感染した報告はない。"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 54,
+    "question": "BSE の病原体はどれか",
+    "choices": [
+      {
+        "num": 1,
+        "text": "細菌"
+      },
+      {
+        "num": 2,
+        "text": "ウイルス"
+      },
+      {
+        "num": 3,
+        "text": "異常プリオン"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 55,
+    "question": "⿃インフルエンザについて誤っているのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ウイルスが変異しやすい。"
+      },
+      {
+        "num": 2,
+        "text": "⾃然宿主は野⽣⽔禽類である。"
+      },
+      {
+        "num": 3,
+        "text": "鶏⾁を⾷べることにより感染する。"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 56,
+    "question": "農薬および動物⽤医薬品等の残留に関する記述である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "ポジティブリスト制度は、農薬等について残留基準を設定し、基準を超えて農薬等が残留する⾷品の販売等を禁⽌する制度で、⾷品衛⽣法に規定されている。"
+      },
+      {
+        "num": 2,
+        "text": "動物⽤医薬品は獣医療法により規定されている。"
+      },
+      {
+        "num": 3,
+        "text": "飼料添加物は飼料安全法に基づく農林⽔産⼤⾂の指定が必要である。"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 57,
+    "question": "残留農薬のポジティブリスト制度が規定されている法律はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "農薬取締法"
+      },
+      {
+        "num": 2,
+        "text": "⾷品衛⽣法"
+      },
+      {
+        "num": 3,
+        "text": "⾷品安全基本法"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 58,
+    "question": "飼料添加物の品質、有効性、残留性を審査、承認する制度が定められている法律はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "と畜場法"
+      },
+      {
+        "num": 2,
+        "text": "飼料安全法"
+      },
+      {
+        "num": 3,
+        "text": "農薬取締法"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 59,
+    "question": "⾷品中の動物⽤医薬品の残留基準が定められている法律はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷品衛⽣法"
+      },
+      {
+        "num": 2,
+        "text": "農薬取締法"
+      },
+      {
+        "num": 3,
+        "text": "医薬品医療機器等法"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 60,
+    "question": "⾷品の規格・基準を定めている機関はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "保健所"
+      },
+      {
+        "num": 2,
+        "text": "厚⽣労働省"
+      },
+      {
+        "num": 3,
+        "text": "⾷品安全委員会"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 61,
+    "question": "⾷品衛⽣法が平成 30 年に改正されたが、その改正された内容はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "遺伝⼦組換え⾷品の安全性審査を義務化"
+      },
+      {
+        "num": 2,
+        "text": "｢品質保持期限｣｢賞味期限｣の⽤語を｢賞味期限｣に統⼀"
+      },
+      {
+        "num": 3,
+        "text": "すべての⾷品等事業者に、HACCP に沿った衛⽣管理の実施を求める"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 62,
+    "question": "⾷の安全の取り組み（リスク分析）で実施されているものである。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "リスクヘッジ"
+      },
+      {
+        "num": 2,
+        "text": "リスクコミュニケーション"
+      },
+      {
+        "num": 3,
+        "text": "リスク評価（リスクアセスメント）"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 63,
+    "question": "⾷品衛⽣法の⽬的（⾷品衛⽣法第⼀条）はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "国⺠の健康の保護"
+      },
+      {
+        "num": 2,
+        "text": "寿命の延⻑"
+      },
+      {
+        "num": 3,
+        "text": "環境衛⽣の改善"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 64,
+    "question": "⾷品衛⽣法における⾷品事業者の責務はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷品衛⽣に関する研究の推進"
+      },
+      {
+        "num": 2,
+        "text": "国際的な連携・技術的援助"
+      },
+      {
+        "num": 3,
+        "text": "⾃主検査の実施の努⼒"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 65,
+    "question": "⾷品衛⽣法において販売が禁⽌されていないのはどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "有毒な⾷品"
+      },
+      {
+        "num": 2,
+        "text": "病原微⽣物に汚染された⾷品"
+      },
+      {
+        "num": 3,
+        "text": "基準内の農薬が検出された⾷品"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 66,
+    "question": "⾷品衛⽣法において添加物などの製造や加⼯を営む営業者に置くことが義務付けられているのはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷品衛⽣責任者"
+      },
+      {
+        "num": 2,
+        "text": "⾷品衛⽣監視員"
+      },
+      {
+        "num": 3,
+        "text": "⾷品衛⽣管理者"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 67,
+    "question": "⾷品衛⽣法において、営業の届出が必要な業種はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "飲⾷店営業"
+      },
+      {
+        "num": 2,
+        "text": "そうざい製造業"
+      },
+      {
+        "num": 3,
+        "text": "乳類販売業"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 68,
+    "question": "⾷品衛⽣法に基づいて営業の許可や届出が不要な業種はどれか。⼀つ選べ。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾏商"
+      },
+      {
+        "num": 2,
+        "text": "野菜果物販売業"
+      },
+      {
+        "num": 3,
+        "text": "⾷品⼜は添加物の輸⼊業"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 69,
+    "question": "⾷品安全基本法の⽬的である。誤りはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷品の安全性の確保"
+      },
+      {
+        "num": 2,
+        "text": "国⺠の健康を保護"
+      },
+      {
+        "num": 3,
+        "text": "⾷料の安定供給"
+      }
+    ],
+    "answers": [
+      3
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 70,
+    "question": "⾷品安全基本法の⾷品関連事業者の責務はどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "⾷品の安全性確保に関する施策を定めて実施する。"
+      },
+      {
+        "num": 2,
+        "text": "⾷品の安全性確保について第⼀義的な責任を有することを認識し、必要な措置を適切に実施する。"
+      },
+      {
+        "num": 3,
+        "text": "知識と理解を深めるとともに、施策について意⾒を表明するように努める"
+      }
+    ],
+    "answers": [
+      2
+    ],
+    "isMulti": false
+  },
+  {
+    "num": 71,
+    "question": "⾷品安全基本法ができたきっかけはどれか。",
+    "choices": [
+      {
+        "num": 1,
+        "text": "BSE"
+      },
+      {
+        "num": 2,
+        "text": "SARS"
+      },
+      {
+        "num": 3,
+        "text": "⿃インフルエンザ"
+      }
+    ],
+    "answers": [
+      1
+    ],
+    "isMulti": false
+  }
+];
+
+let state = {
+  answers: {},    // questionNum -> selected choices array
+  confirmed: {},  // questionNum -> true
+  order: QUIZ_DATA.map((_, i) => i),
+  filter: 'all'
+};
+
+function renderQuiz() {
+  const container = document.getElementById('quiz-container');
+  container.innerHTML = '';
+
+  // Final result card
+  const finalDiv = document.createElement('div');
+  finalDiv.className = 'final-result';
+  finalDiv.id = 'final-result';
+  container.appendChild(finalDiv);
+
+  const answeredCount = Object.keys(state.confirmed).length;
+  if (answeredCount === QUIZ_DATA.length) {
+    showFinalResult();
+  }
+
+  for (const idx of state.order) {
+    const q = QUIZ_DATA[idx];
+    const isConfirmed = state.confirmed[q.num];
+    const userAnswers = state.answers[q.num] || [];
+    const isCorrect = isConfirmed && arraysEqual(userAnswers.sort(), q.answers.sort());
+
+    // Apply filter
+    if (state.filter === 'unanswered' && isConfirmed) continue;
+    if (state.filter === 'wrong' && (!isConfirmed || isCorrect)) continue;
+
+    const card = document.createElement('div');
+    card.className = 'question-card' + (isConfirmed ? (isCorrect ? ' answered-correct' : ' answered-wrong') : '');
+    card.id = 'q-' + q.num;
+
+    const markers = ['①', '②', '③', '④', '⑤'];
+
+    let choicesHtml = q.choices.map(c => {
+      let cls = 'choice';
+      let icon = '';
+      if (isConfirmed) {
+        cls += ' disabled';
+        if (q.answers.includes(c.num)) {
+          cls += ' correct';
+          icon = '<span class="choice-icon">&#10004;</span>';
+        }
+        if (userAnswers.includes(c.num) && !q.answers.includes(c.num)) {
+          cls += ' wrong';
+          icon = '<span class="choice-icon">&#10008;</span>';
+        }
+      } else if (userAnswers.includes(c.num)) {
+        cls += ' selected';
+      }
+
+      return `<div class="${cls}" data-q="${q.num}" data-c="${c.num}" onclick="selectChoice(${q.num}, ${c.num}, ${q.isMulti})">
+        <span class="choice-marker">${markers[c.num - 1]}</span>
+        <span class="choice-text">${escapeHtml(c.text)}</span>
+        ${icon}
+      </div>`;
+    }).join('');
+
+    let resultHtml = '';
+    if (isConfirmed) {
+      if (isCorrect) {
+        resultHtml = '<div class="result-msg correct-msg show">正解!</div>';
+      } else {
+        const correctStr = q.answers.map(a => markers[a - 1]).join('、');
+        resultHtml = `<div class="result-msg wrong-msg show">不正解 — 正解は ${correctStr}</div>`;
+      }
+    }
+
+    const confirmShow = !isConfirmed && userAnswers.length > 0 ? ' show' : '';
+
+    card.innerHTML = `
+      <div class="question-header">
+        <span class="question-num">${q.num}</span>
+        <span class="question-text">${escapeHtml(q.question)}${q.isMulti ? '<span class="multi-badge">複数選択</span>' : ''}</span>
+      </div>
+      <div class="choices">${choicesHtml}</div>
+      ${resultHtml}
+      <button class="confirm-btn${confirmShow}" id="confirm-${q.num}" onclick="confirmAnswer(${q.num})">回答する</button>
+    `;
+
+    container.appendChild(card);
+  }
+
+  updateStats();
+}
+
+function selectChoice(qNum, cNum, isMulti) {
+  if (state.confirmed[qNum]) return;
+
+  if (!state.answers[qNum]) state.answers[qNum] = [];
+
+  if (isMulti) {
+    const idx = state.answers[qNum].indexOf(cNum);
+    if (idx >= 0) {
+      state.answers[qNum].splice(idx, 1);
+    } else {
+      state.answers[qNum].push(cNum);
+    }
+  } else {
+    state.answers[qNum] = [cNum];
+  }
+
+  // Update UI without full re-render
+  const card = document.getElementById('q-' + qNum);
+  const choices = card.querySelectorAll('.choice');
+  choices.forEach(el => {
+    const c = parseInt(el.dataset.c);
+    if (state.answers[qNum].includes(c)) {
+      el.classList.add('selected');
+    } else {
+      el.classList.remove('selected');
+    }
+  });
+
+  const btn = document.getElementById('confirm-' + qNum);
+  if (state.answers[qNum].length > 0) {
+    btn.classList.add('show');
+  } else {
+    btn.classList.remove('show');
+  }
+}
+
+function confirmAnswer(qNum) {
+  state.confirmed[qNum] = true;
+
+  const q = QUIZ_DATA.find(x => x.num === qNum);
+  const userAnswers = (state.answers[qNum] || []).sort();
+  const isCorrect = arraysEqual(userAnswers, q.answers.sort());
+
+  const card = document.getElementById('q-' + qNum);
+  card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
+
+  // Update choices
+  const markers = ['①', '②', '③', '④', '⑤'];
+  const choices = card.querySelectorAll('.choice');
+  choices.forEach(el => {
+    const c = parseInt(el.dataset.c);
+    el.classList.add('disabled');
+    el.classList.remove('selected');
+    el.onclick = null;
+
+    if (q.answers.includes(c)) {
+      el.classList.add('correct');
+      el.querySelector('.choice-icon')?.remove();
+      const icon = document.createElement('span');
+      icon.className = 'choice-icon';
+      icon.innerHTML = '&#10004;';
+      el.appendChild(icon);
+    }
+    if (userAnswers.includes(c) && !q.answers.includes(c)) {
+      el.classList.add('wrong');
+      const icon = document.createElement('span');
+      icon.className = 'choice-icon';
+      icon.innerHTML = '&#10008;';
+      el.appendChild(icon);
+    }
+  });
+
+  // Show result message
+  const btn = document.getElementById('confirm-' + qNum);
+  btn.classList.remove('show');
+
+  const msg = document.createElement('div');
+  if (isCorrect) {
+    msg.className = 'result-msg correct-msg show';
+    msg.textContent = '正解!';
+  } else {
+    msg.className = 'result-msg wrong-msg show';
+    const correctStr = q.answers.map(a => markers[a - 1]).join('、');
+    msg.textContent = '不正解 — 正解は ' + correctStr;
+  }
+  card.appendChild(msg);
+
+  updateStats();
+
+  // Check if all answered
+  if (Object.keys(state.confirmed).length === QUIZ_DATA.length) {
+    showFinalResult();
+  }
+}
+
+function updateStats() {
+  const total = QUIZ_DATA.length;
+  const answered = Object.keys(state.confirmed).length;
+  let correct = 0;
+
+  for (const qNum of Object.keys(state.confirmed)) {
+    const q = QUIZ_DATA.find(x => x.num === parseInt(qNum));
+    const userAnswers = (state.answers[qNum] || []).sort();
+    if (arraysEqual(userAnswers, q.answers.sort())) correct++;
+  }
+
+  const wrong = answered - correct;
+  const rate = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+
+  document.getElementById('answered').textContent = answered;
+  document.getElementById('correct').textContent = correct;
+  document.getElementById('wrong').textContent = wrong;
+  document.getElementById('rate').textContent = rate + '%';
+  document.getElementById('progress').style.width = (answered / total * 100) + '%';
+}
+
+function showFinalResult() {
+  const total = QUIZ_DATA.length;
+  let correct = 0;
+  for (const qNum of Object.keys(state.confirmed)) {
+    const q = QUIZ_DATA.find(x => x.num === parseInt(qNum));
+    const userAnswers = (state.answers[qNum] || []).sort();
+    if (arraysEqual(userAnswers, q.answers.sort())) correct++;
+  }
+  const rate = Math.round((correct / total) * 100);
+
+  let grade, gradeColor;
+  if (rate >= 90) { grade = 'S'; gradeColor = '#ffd700'; }
+  else if (rate >= 80) { grade = 'A'; gradeColor = '#4ecca3'; }
+  else if (rate >= 70) { grade = 'B'; gradeColor = '#3498db'; }
+  else if (rate >= 60) { grade = 'C'; gradeColor = '#f39c12'; }
+  else { grade = 'D'; gradeColor = '#e74c3c'; }
+
+  const el = document.getElementById('final-result');
+  el.className = 'final-result show';
+  el.innerHTML = `
+    <h2>結果発表</h2>
+    <div class="grade" style="color:${gradeColor}">ランク: ${grade}</div>
+    <div class="final-score">${correct} <span class="total">/ ${total}</span></div>
+    <div>正答率: ${rate}%</div>
+    <button class="retry-btn" onclick="shuffleAndReset()">もう一度挑戦する</button>
+  `;
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function filterQuestions(filter) {
+  state.filter = filter;
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + filter).classList.add('active');
+  renderQuiz();
+}
+
+function shuffleAndReset() {
+  state.answers = {};
+  state.confirmed = {};
+  state.filter = 'all';
+  // Fisher-Yates shuffle
+  const arr = QUIZ_DATA.map((_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  state.order = arr;
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-all').classList.add('active');
+  renderQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetToOriginalOrder() {
+  state.order = QUIZ_DATA.map((_, i) => i);
+  state.filter = 'all';
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-all').classList.add('active');
+  renderQuiz();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function arraysEqual(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Initial render
+renderQuiz();
+</script>
+
+</body>
+</html>
